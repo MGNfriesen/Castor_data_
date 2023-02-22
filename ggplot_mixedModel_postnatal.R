@@ -7,7 +7,6 @@ library(nlme)
 library(reshape)
 library(ggeffects) 
 
-Hoiaef
 
 # Load data from Castor
 df <- read_excel("~/Downloads/NECTAR_Necrotizing_Enterocolitis_excel_export_20230114104407.xlsx")
