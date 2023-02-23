@@ -53,8 +53,12 @@ total_data <- total_data %>%
 total_data$age_time_ultr<-as.numeric(total_data$age_time_ultr)
 total_data$surg_age<-as.numeric(total_data$surg_age)
 total_data$tim_ultr <- total_data$age_time_ultr-total_data$surg_age
+total_data <- total_data %>% filter(tim_ultr %in% c("-5", "-4","-3","-2","-1","0","1","2","3"))
 
 
+
+#select only LVOTO and TGA
+total_data <- total_data %>% filter(Diagnosegroep %in% c("LVOTO", "TGA"))
 
 
 #Intercept
@@ -105,6 +109,11 @@ plot_model(Arm_time_, type = "pred", terms = c("tim_ultr", "Diagnosegroep"), sho
         axis.text = element_text(size = 10),
         strip.text = element_text(face = "bold", size = 12))
 
-summary(Arm_time_)
+
+
+ggplot(total_data, aes(x=tim_ultr, y=md, group=Participant.Id, color=Diagnosegroep)) +
+  geom_line() 
+
+
 
 
