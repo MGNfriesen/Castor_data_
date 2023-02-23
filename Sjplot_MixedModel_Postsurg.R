@@ -51,31 +51,31 @@ total_data <- total_data %>%
 
 # Prepare data for mixed effect analyses
 total_data$age_time_ultr<-as.numeric(total_data$age_time_ultr)
-total_data <- total_data %>%
-  filter(age_time_ultr < 5)
+total_data$surg_age<-as.numeric(total_data$surg_age)
+total_data$tim_ultr <- total_data$age_time_ultr-total_data$surg_age
 
-#load in packages for mixed effect analyses
-library(car); library(ggplot2); library(nlme); library(reshape);library(lme4)
+
+
 
 #Intercept
-intercept <-gls(ps ~ 1, data = total_data, method =
+intercept <-gls(md ~ 1, data = total_data, method =
                   "ML", na.action = na.exclude)
 
 #vary intercept accross patients
-randomIntercept <- lme(ps ~ 1, data = total_data,
+randomIntercept <- lme(md ~ 1, data = total_data,
                        random = ~1|Participant.Id, method = "ML", na.action = na.exclude, 
                        control = list(opt="optim"))
 
 
 #adding random slopes: which means that intercepts and the effect of time (~Time) vary across people
-timeRS<-update(randomIntercept, random = ~age_time_ultr|Participant.Id)
+timeRS<-update(randomIntercept, random = ~tim_ultr|Participant.Id)
 
 #add covariance time
-ARModel<-update(timeRS, correlation = corAR1(value=0, form = ~age_time_ultr|Participant.Id))
+ARModel<-update(timeRS, correlation = corAR1(value=0, form = ~tim_ultr|Participant.Id))
 summary(ARModel)
 
 #fixed effects time and diagnosis
-Arm_time_<- update(ARModel, ps ~ age_time_ultr * Diagnosegroep)
+Arm_time_<- update(ARModel, md ~ tim_ultr * Diagnosegroep)
 Arm_time_Diagnos<-update(Arm_time_, .~. + Diagnosegroep)
 Arm_time_Diagnos_bd<-update(Arm_time_Diagnos, .~. + bd_total)
 
@@ -87,30 +87,24 @@ anova( ARModel,Arm_time_Diagnos )
 
 
 ####Plot mixed effects
-
-(mm_plot <- ggplot(total_data, aes(x = age_time_ultr, y = ps, colour = Participant.Id)) +
-    facet_wrap(~Diagnosegroep, nrow=2) +   # a panel for each mountain range
-    geom_point(alpha = 0.5) +
-    theme_classic() +
-    geom_line(data = cbind(total_data, pred = predict(Arm_time_)), aes(y = pred), linewidth = 1) +  # adding predicted line from mixed model 
-    theme(legend.position = "none",
-          panel.spacing = unit(2, "lines"))+
-    labs(x = "day of ultrasound", y = "ps", 
-         title = ""))
+# Load the required packages
+library(sjPlot)
 
 
-# Extract the prediction data frame
-mean.mm <- ggemmeans(Arm_time_, terms = "age_time_ultr")  # this gives overall means for the model
+# Set the theme to "scientific"
+theme_set(theme_sjplot())
+
+# Create the predicted values plot with variance ranges
+plot_model(Arm_time_, type = "pred", terms = c("tim_ultr", "Diagnosegroep"), show.se = TRUE) +
+  labs(title = "Predicted values of minimal diastolic velocity by age, diagnosis and time",
+       subtitle = "with 95% confidence intervals",
+       x = "Days around surgery", y = "Min. diastolic velocity (cm/s)") +
+  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.subtitle = element_text(face = "italic", size = 12, hjust = 0.5),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        strip.text = element_text(face = "bold", size = 12))
+
+summary(Arm_time_)
 
 
-(ggplot(mean.mm) + 
-    geom_line(aes(x = x, y = predicted)) + 
-    facet_wrap(~Diagnosegroep, nrow=2)+
-    geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
-                fill = "lightgrey", alpha = 0.5) +  # error band
-    geom_point(data = total_data,                      # adding the raw data (scaled values)
-               aes(x = age_time_ultr, y = ps, colour = Participant.Id))  + xlim(0,4)+ylim(0,100)+
-    labs(x = "Day of ultrasound", y = "Peak systolic velocity (cm/s)", 
-         title = "") + 
-    theme_minimal()
-)
