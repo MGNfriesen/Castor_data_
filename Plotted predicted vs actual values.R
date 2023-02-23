@@ -1,4 +1,4 @@
-plot(x=predict(timeRS), y= total_data$md,
+plot(x=predict(Arm_time_), y= total_data$md,
      xlab='Predicted Values',
      ylab='Actual Values',
      main='Predicted vs. Actual Values')
