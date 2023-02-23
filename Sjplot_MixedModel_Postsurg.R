@@ -5,6 +5,8 @@ library(car)
 library(ggplot2)
 library(nlme)
 library(reshape)
+library(ggeffects) 
+
 
 # Load data from Castor
 df <- read_excel("~/Downloads/NECTAR_Necrotizing_Enterocolitis_excel_export_20230114104407.xlsx")
@@ -84,28 +86,31 @@ anova( ARModel,Arm_time_Diagnos )
 
 
 
-
 ####Plot mixed effects
-# Load the required packages
-library(sjPlot)
+
+(mm_plot <- ggplot(total_data, aes(x = age_time_ultr, y = ps, colour = Participant.Id)) +
+    facet_wrap(~Diagnosegroep, nrow=2) +   # a panel for each mountain range
+    geom_point(alpha = 0.5) +
+    theme_classic() +
+    geom_line(data = cbind(total_data, pred = predict(Arm_time_)), aes(y = pred), linewidth = 1) +  # adding predicted line from mixed model 
+    theme(legend.position = "none",
+          panel.spacing = unit(2, "lines"))+
+    labs(x = "day of ultrasound", y = "ps", 
+         title = ""))
 
 
-# Set the theme to "scientific"
-theme_set(theme_sjplot())
-
-# Create the predicted values plot with variance ranges
-plot_model(Arm_time_, type = "pred", terms = c("age_time_ultr", "Diagnosegroep"), show.se = TRUE) +
-  labs(title = "Predicted values of peak systolic velocity by age, diagnosis and time",
-       subtitle = "with 95% confidence intervals",
-       x = "Age (days)", y = "Peak systolic velocity (cm/s)") +
-  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-        plot.subtitle = element_text(face = "italic", size = 12, hjust = 0.5),
-        axis.title = element_text(size = 12),
-        axis.text = element_text(size = 10),
-        strip.text = element_text(face = "bold", size = 12))
-
-summary(Arm_time_)
+# Extract the prediction data frame
+mean.mm <- ggemmeans(Arm_time_, terms = "age_time_ultr")  # this gives overall means for the model
 
 
-
-
+(ggplot(mean.mm) + 
+    geom_line(aes(x = x, y = predicted)) + 
+    facet_wrap(~Diagnosegroep, nrow=2)+
+    geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
+                fill = "lightgrey", alpha = 0.5) +  # error band
+    geom_point(data = total_data,                      # adding the raw data (scaled values)
+               aes(x = age_time_ultr, y = ps, colour = Participant.Id))  + xlim(0,4)+ylim(0,100)+
+    labs(x = "Day of ultrasound", y = "Peak systolic velocity (cm/s)", 
+         title = "") + 
+    theme_minimal()
+)
