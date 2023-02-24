@@ -110,10 +110,22 @@ plot_model(Arm_time_, type = "pred", terms = c("tim_ultr", "Diagnosegroep"), sho
         strip.text = element_text(face = "bold", size = 12))
 
 
-
-ggplot(total_data, aes(x=tim_ultr, y=md, group=Participant.Id, color=Diagnosegroep)) +
-  geom_line() 
-
-
-
-
+#plot mixedmodel and dataset in one figure
+plot_model(Arm_time_, type = "pred", terms = c("tim_ultr", "Diagnosegroep"), ci.lvl = 0.95,
+           title = "Predicted values of minimal diastolic velocity by age, diagnosis and time",
+           subtitle = "with 95% confidence intervals",
+           x = "Days around surgery", y = "Min. diastolic velocity (cm/s)",
+  legend.title = "Diagnosis",axis.title = c("Days around surgery", "Min. diastolic velocity (cm/s)"),
+  axis.labels = c("Normal outcome", "Adverse outcome"))+
+ geom_line(data = total_data, inherit.aes = FALSE,
+            aes(x= tim_ultr, y = md, group = Participant.Id, color = Diagnosegroep),     
+            alpha = 0.3)+ 
+  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.subtitle = element_text(face = "italic", size = 12, hjust = 0.5),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        strip.text = element_text(face = "bold", size = 12)) +
+  scale_color_manual(labels = c("LVOTO", "TGA"), values = c("Blue", "red")) +
+  scale_fill_manual(labels = c("LVOTO", "TGA"), values = c("Blue", "red"))  +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  ylim(0, 35)
