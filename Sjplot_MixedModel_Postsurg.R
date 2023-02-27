@@ -9,8 +9,11 @@ library(ggeffects)
 
 
 # Load data from Castor
+#flow data (repeated measures)
 df <- read_excel("~/Downloads/NECTAR_Necrotizing_Enterocolitis_excel_export_20230114104407.xlsx")
+#clinical data
 timing_castor <- read_excel("~/Downloads/NECTAR_Necrotizing_Enterocolitis_excel_export_20230208011705.xlsx")
+#diagnosis 
 Diagnosegroep <- read_excel("~/Downloads/Diagnoses en OKs Morgan tijdelijk.xlsx")
 
 
