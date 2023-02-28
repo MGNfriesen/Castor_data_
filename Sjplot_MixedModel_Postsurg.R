@@ -56,12 +56,7 @@ total_data <- total_data %>%
 total_data$age_time_ultr<-as.numeric(total_data$age_time_ultr)
 total_data$surg_age<-as.numeric(total_data$surg_age)
 total_data$tim_ultr <- total_data$age_time_ultr-total_data$surg_age
-total_data <- total_data %>% filter(tim_ultr %in% c("-5", "-4","-3","-2","-1","0","1","2","3"))
-
-
-
-#select only LVOTO and TGA
-total_data <- total_data %>% filter(Diagnosegroep %in% c("LVOTO", "TGA"))
+total_data <- total_data %>% filter(tim_ultr %in% c("-6","-5", "-4","-3","-2","-1","0","1","2","3","4"))
 
 
 #Intercept
@@ -82,53 +77,41 @@ ARModel<-update(timeRS, correlation = corAR1(value=0, form = ~tim_ultr|Participa
 summary(ARModel)
 
 #fixed effects time and diagnosis
-Arm_time_<- update(ARModel, md ~ tim_ultr * Diagnosegroep)
-Arm_time_Diagnos<-update(Arm_time_, .~. + Diagnosegroep)
-Arm_time_Diagnos_bd<-update(Arm_time_Diagnos, .~. + bd_total)
+Arm_TD<- update(ARModel, md ~ tim_ultr * Diagnosegroep)
 
-
-anova( ARModel,Arm_time_)
-anova( ARModel,Arm_time_Diagnos )
+Arm_TD_bd<-update(Arm_TD, .~. + bd_total)
 
 
 
 
+total_data$bd_total<-as.factor(total_data$bd_total)
 ####Plot mixed effects
 # Load the required packages
 library(sjPlot)
 
-
 # Set the theme to "scientific"
 theme_set(theme_sjplot())
 
-# Create the predicted values plot with variance ranges
-plot_model(Arm_time_, type = "pred", terms = c("tim_ultr", "Diagnosegroep"), show.se = TRUE) +
+# Create the predicted values plot with confidence interval
+plot_model(Arm_TD_bd, 
+           type = "pred", 
+           terms = c("tim_ultr", "Diagnosegroep"), 
+           show.se = TRUE,) +
   labs(title = "Predicted values of minimal diastolic velocity by age, diagnosis and time",
        subtitle = "with 95% confidence intervals",
-       x = "Days around surgery", y = "Min. diastolic velocity (cm/s)") +
-  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-        plot.subtitle = element_text(face = "italic", size = 12, hjust = 0.5),
-        axis.title = element_text(size = 12),
-        axis.text = element_text(size = 10),
-        strip.text = element_text(face = "bold", size = 12))
+       x = "Days around surgery", y = "Min. diastolic velocity (cm/s)") 
+
+ggplot()+
+geom_line(data = total_data, inherit.aes = FALSE,
+            aes(x= tim_ultr, y = md, group=Participant.Id, colour=bd_total),alpha = 0.7)+ 
+  facet_wrap(~ Diagnosegroep) +
+    labs(title = "Minimal diastolic velocity per CHD",
+         x = "Days around surgery", y = "Min. diastolic velocity (cm/s)")
+ 
 
 
-#plot mixedmodel and dataset in one figure
-plot_model(Arm_time_, type = "pred", terms = c("tim_ultr", "Diagnosegroep"), ci.lvl = 0.95,
-           title = "Predicted values of minimal diastolic velocity by age, diagnosis and time",
-           subtitle = "with 95% confidence intervals",
-           x = "Days around surgery", y = "Min. diastolic velocity (cm/s)",
-  legend.title = "Diagnosis",axis.title = c("Days around surgery", "Min. diastolic velocity (cm/s)"),
-  axis.labels = c("Normal outcome", "Adverse outcome"))+
- geom_line(data = total_data, inherit.aes = FALSE,
-            aes(x= tim_ultr, y = md, group = Participant.Id, color = Diagnosegroep),     
-            alpha = 0.3)+ 
-  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-        plot.subtitle = element_text(face = "italic", size = 12, hjust = 0.5),
-        axis.title = element_text(size = 12),
-        axis.text = element_text(size = 10),
-        strip.text = element_text(face = "bold", size = 12)) +
-  scale_color_manual(labels = c("LVOTO", "TGA"), values = c("Blue", "red")) +
-  scale_fill_manual(labels = c("LVOTO", "TGA"), values = c("Blue", "red"))  +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  ylim(0, 35)
+
+
+  
+
+

@@ -55,6 +55,8 @@ total_data <- total_data %>%
 total_data$age_time_ultr<-as.numeric(total_data$age_time_ultr)
 total_data$surg_age<-as.numeric(total_data$surg_age)
 total_data$tim_ultr <- total_data$age_time_ultr-total_data$surg_age
+total_data$bd_total<-as.factor(total_data$bd_total)
+
 
 
 
@@ -76,16 +78,11 @@ ARModel<-update(timeRS, correlation = corAR1(value=0, form = ~tim_ultr|Participa
 summary(ARModel)
 
 #fixed effects time and diagnosis
-Arm_time_<- update(ARModel, md ~ tim_ultr * Diagnosegroep)
-Arm_time_Diagnos<-update(Arm_time_, .~. + Diagnosegroep)
-Arm_time_Diagnos_bd<-update(Arm_time_Diagnos, .~. + bd_total)
+Arm_TD<- update(ARModel, md ~ tim_ultr * Diagnosegroep)
 
+Arm_TD_bd<-update(Arm_time_, .~. + bd_total)
 
 anova( ARModel,Arm_time_)
-anova( ARModel,Arm_time_Diagnos )
-
-
-
 
 
 ####Plot mixed effects
@@ -94,25 +91,30 @@ anova( ARModel,Arm_time_Diagnos )
     facet_wrap(~Diagnosegroep, nrow=2) +   # a panel for each mountain range
     geom_point(alpha = 0.5) +
     theme_classic() +
-    geom_line(data = cbind(total_data, pred = predict(Arm_time_)), aes(y = pred), linewidth = 1) +  # adding predicted line from mixed model 
+    geom_line(data = cbind(total_data, pred = predict(Arm_TD)), aes(y = pred), linewidth = 1) +  # adding predicted line from mixed model 
     theme(legend.position = "none",
           panel.spacing = unit(2, "lines"))+
     labs(x = "day of ultrasound", y = "md", 
          title = ""))
 
-
+Arm_TD_bd$tim_ultr<-as.numeric(Arm_TD_bd$tim_ultr)
 # Extract the prediction data frame
-mean.mm <- ggemmeans(Arm_time_, terms = "tim_ultr")  # this gives overall means for the model
+mean.mm <- ggemmeans(Arm_TD, terms = c("tim_ultr","Diagnosegroep"))  # this gives overall means for the model
+pred1<-ggpredict(ARModel, terms = c("tim_ultr","Diagnosegroep"))
 
-
-(ggplot(mean.mm) + 
-    geom_line(aes(x = x, y = predicted)) + 
-    facet_wrap(~Diagnosegroep, nrow=2)+
+(ggplot(pred1) + 
+    geom_line(aes(x = x, y = predicted)) +
     geom_ribbon(aes(x = x, ymin = predicted - std.error, ymax = predicted + std.error), 
                 fill = "lightgrey", alpha = 0.5) +  # error band
     geom_point(data = total_data,                      # adding the raw data (scaled values)
-               aes(x = tim_ultr, y = md, colour = Participant.Id))  + xlim(0,4)+ylim(0,100)+
+               aes(x = tim_ultr, y = md, colour = bd_total))  + xlim(-4,6)+ylim(-10,35)+
     labs(x = "Day of ultrasound", y = "Peak systolic velocity (cm/s)", 
          title = "") + 
     theme_minimal()
 )
+
+
+
+
+
+
