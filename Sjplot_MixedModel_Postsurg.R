@@ -56,15 +56,16 @@ total_data <- total_data %>%
 total_data$age_time_ultr<-as.numeric(total_data$age_time_ultr)
 total_data$surg_age<-as.numeric(total_data$surg_age)
 total_data$tim_ultr <- total_data$age_time_ultr-total_data$surg_age
-total_data <- total_data %>% filter(tim_ultr %in% c("-6","-5", "-4","-3","-2","-1","0","1","2","3","4"))
+total_data <- total_data %>% filter(tim_ultr %in% c("0","1","2","3"))
+total_data <- total_data %>% filter(Diagnosegroep %in% c("TGA","LVOTO"))
 
 
 #Intercept
-intercept <-gls(md ~ 1, data = total_data, method =
+intercept <-gls(ps ~ 1, data = total_data, method =
                   "ML", na.action = na.exclude)
 
 #vary intercept accross patients
-randomIntercept <- lme(md ~ 1, data = total_data,
+randomIntercept <- lme(ps ~ 1, data = total_data,
                        random = ~1|Participant.Id, method = "ML", na.action = na.exclude, 
                        control = list(opt="optim"))
 
@@ -77,7 +78,7 @@ ARModel<-update(timeRS, correlation = corAR1(value=0, form = ~tim_ultr|Participa
 summary(ARModel)
 
 #fixed effects time and diagnosis
-Arm_TD<- update(ARModel, md ~ tim_ultr * Diagnosegroep)
+Arm_TD<- update(ARModel, ps ~ tim_ultr * Diagnosegroep)
 
 Arm_TD_bd<-update(Arm_TD, .~. + bd_total)
 
@@ -93,20 +94,17 @@ library(sjPlot)
 theme_set(theme_sjplot())
 
 # Create the predicted values plot with confidence interval
-plot_model(Arm_TD_bd, 
+plot_model(Arm_TD, 
            type = "pred", 
            terms = c("tim_ultr", "Diagnosegroep"), 
            show.se = TRUE,) +
-  labs(title = "Predicted values of minimal diastolic velocity by age, diagnosis and time",
+  labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
        subtitle = "with 95% confidence intervals",
-       x = "Days around surgery", y = "Min. diastolic velocity (cm/s)") 
-
-ggplot()+
-geom_line(data = total_data, inherit.aes = FALSE,
-            aes(x= tim_ultr, y = md, group=Participant.Id, colour=bd_total),alpha = 0.7)+ 
-  facet_wrap(~ Diagnosegroep) +
-    labs(title = "Minimal diastolic velocity per CHD",
-         x = "Days around surgery", y = "Min. diastolic velocity (cm/s)")
+       x = "Days around surgery", y = "Peak systolic velocity (cm/s)",color = "CHD Diagnosis") +
+geom_point(data = total_data, inherit.aes = FALSE,
+            aes(x= tim_ultr, y = ps, color=Diagnosegroep),alpha = 0.7) +
+    labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
+         x = "Days post-surgery", y = "Peak systolic velocity (cm/s)")
  
 
 

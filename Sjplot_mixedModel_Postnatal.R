@@ -1,3 +1,5 @@
+
+
 library(readxl)
 library(dplyr)
 library(lme4)
@@ -5,6 +7,8 @@ library(car)
 library(ggplot2)
 library(nlme)
 library(reshape)
+library(ggeffects) 
+
 
 # Load data from Castor
 #flow data (repeated measures)
@@ -54,9 +58,8 @@ total_data <- total_data %>%
 total_data$age_time_ultr<-as.numeric(total_data$age_time_ultr)
 total_data <- total_data %>%
   filter(age_time_ultr < 5)
+total_data <- total_data %>% filter(Diagnosegroep %in% c("TGA","LVOTO"))
 
-#load in packages for mixed effect analyses
-library(car); library(ggplot2); library(nlme); library(reshape);library(lme4)
 
 #Intercept
 intercept <-gls(ps ~ 1, data = total_data, method =
@@ -76,15 +79,9 @@ ARModel<-update(timeRS, correlation = corAR1(value=0, form = ~age_time_ultr|Part
 summary(ARModel)
 
 #fixed effects time and diagnosis
-Arm_time_<- update(ARModel, ps ~ age_time_ultr * Diagnosegroep)
-Arm_time_Diagnos<-update(Arm_time_, .~. + Diagnosegroep)
-Arm_time_Diagnos_bd<-update(Arm_time_Diagnos, .~. + bd_total)
+Arm_TD<- update(ARModel, ps ~ age_time_ultr * Diagnosegroep)
 
-
-anova( ARModel,Arm_time_)
-anova( ARModel,Arm_time_Diagnos )
-
-
+Arm_TD_bd<-update(Arm_TD, .~. + bd_total)
 
 
 
@@ -92,22 +89,22 @@ anova( ARModel,Arm_time_Diagnos )
 # Load the required packages
 library(sjPlot)
 
-
 # Set the theme to "scientific"
 theme_set(theme_sjplot())
 
-# Create the predicted values plot with variance ranges
-plot_model(Arm_time_, type = "pred", terms = c("age_time_ultr", "Diagnosegroep"), show.se = TRUE) +
-  labs(title = "Predicted values of peak systolic velocity by age, diagnosis and time",
+# Create the predicted values plot with confidence interval
+plot_model(Arm_TD, 
+           type = "pred", 
+           terms = c("age_time_ultr", "Diagnosegroep"), 
+           show.se = TRUE,) +
+  labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
        subtitle = "with 95% confidence intervals",
-       x = "Age (days)", y = "Peak systolic velocity (cm/s)") +
-  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
-        plot.subtitle = element_text(face = "italic", size = 12, hjust = 0.5),
-        axis.title = element_text(size = 12),
-        axis.text = element_text(size = 10),
-        strip.text = element_text(face = "bold", size = 12))
+       x = "Days around surgery", y = "Peak systolic velocity (cm/s)",color = "CHD Diagnosis") +
+  geom_point(data = total_data, inherit.aes = FALSE,
+             aes(x= age_time_ultr, y = ps, color=Diagnosegroep),alpha = 0.7) +
+  labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
+       x = "Days post-birth", y = "Peak systolic velocity (cm/s)")
 
-summary(Arm_time_)
 
 
 
