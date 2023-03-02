@@ -61,39 +61,33 @@ total_data <- total_data %>%
 total_data <- total_data %>% filter(Diagnosegroep %in% c("TGA","LVOTO"))
 
 
-#Intercept
-intercept <-gls(ps ~ 1, data = total_data, method =
-                  "ML", na.action = na.exclude)
 
-#vary intercept accross patients
-randomIntercept <- lme(ps ~ 1, data = total_data,
-                       random = ~1|Participant.Id, method = "ML", na.action = na.exclude, 
-                       control = list(opt="optim"))
-
-
-#adding random slopes: which means that intercepts and the effect of time (~Time) vary across people
-timeRS<-update(randomIntercept, random = ~age_time_ultr|Participant.Id)
-
-#add covariance time
-ARModel<-update(timeRS, correlation = corAR1(value=0, form = ~age_time_ultr|Participant.Id))
-summary(ARModel)
-
-#fixed effects time and diagnosis
-Arm_TD<- update(ARModel, ps ~ age_time_ultr * Diagnosegroep)
-
-Arm_TD_bd<-update(Arm_TD, .~. + bd_total)
 
 
 
 ####Plot mixed effects
+pi<-total_data$pi
+ri<-total_data$ri
+md<-total_data$md
+ps<-total_data$ps
+age_time_ultr<-total_data$age_time_ultr
+Participant.Id<-total_data$Participant.Id
+
 # Load the required packages
 library(sjPlot)
 
 # Set the theme to "scientific"
 theme_set(theme_sjplot())
 
+
+
+##Plot PS
+
+##write out mixed model:
+Arm_TD_post_ps <- lme(ps ~ age_time_ultr * Diagnosegroep, data = total_data, random = ~age_time_ultr|Participant.Id, correlation = corCAR1(value=0.9, form = ~age_time_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
+
 # Create the predicted values plot with confidence interval
-plot_model(Arm_TD, 
+plot_model(Arm_TD_post_ps, 
            type = "pred", 
            terms = c("age_time_ultr", "Diagnosegroep"), 
            show.se = TRUE,) +
@@ -104,6 +98,58 @@ plot_model(Arm_TD,
              aes(x= age_time_ultr, y = ps, color=Diagnosegroep),alpha = 0.7) +
   labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
        x = "Days post-birth", y = "Peak systolic velocity (cm/s)")
+
+
+##Plot MD
+##write out mixed model:
+Arm_TD_post_md <- lme(md ~ age_time_ultr * Diagnosegroep, data = total_data, random = ~age_time_ultr|Participant.Id, correlation = corCAR1(value=0.9, form = ~age_time_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
+
+# Create the predicted values plot with confidence interval
+plot_model(Arm_TD_post_md, 
+           type = "pred", 
+           terms = c("age_time_ultr", "Diagnosegroep"), 
+           show.se = TRUE,) +
+  labs(title = "Predicted values for Minimal diastolic velocity by age, diagnosis and time",
+       subtitle = "with 95% confidence intervals",
+       x = "Days around surgery", y = "Minimal diastolic velocity (cm/s)",color = "CHD Diagnosis") +
+  geom_point(data = total_data, inherit.aes = FALSE,
+             aes(x= age_time_ultr, y = md, color=Diagnosegroep),alpha = 0.7) +
+  labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
+       x = "Days post-birth", y = "Minimal diastolic velocity (cm/s)")
+
+
+##Plot PI
+Arm_TD_post_pi <- lme(pi ~ age_time_ultr * Diagnosegroep, data = total_data, random = ~age_time_ultr|Participant.Id, correlation = corCAR1(value=0.9, form = ~age_time_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
+
+# Create the predicted values plot with confidence interval
+plot_model(Arm_TD_post_pi, 
+           type = "pred", 
+           terms = c("age_time_ultr", "Diagnosegroep"), 
+           show.se = TRUE,) +
+  labs(title = "Predicted values for Pulsatility Index by age, diagnosis and time",
+       subtitle = "with 95% confidence intervals",
+       x = "Days around surgery", y = "Pulsatility Index",color = "CHD Diagnosis") +
+  geom_point(data = total_data, inherit.aes = FALSE,
+             aes(x= age_time_ultr, y = pi, color=Diagnosegroep),alpha = 0.7) +
+  labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
+       x = "Days post-birth", y = "Pulsatility Index")
+
+
+###Plot RI
+Arm_TD_post_ri <- lme(ri ~ age_time_ultr * Diagnosegroep, data = total_data, random = ~age_time_ultr|Participant.Id, correlation = corCAR1(value=0.86, form = ~age_time_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
+
+# Create the predicted values plot with confidence interval
+plot_model(Arm_TD_post_ri, 
+           type = "pred", 
+           terms = c("age_time_ultr", "Diagnosegroep"), 
+           show.se = TRUE,) +
+  labs(title = "Predicted values for Resistivity Indexby age, diagnosis and time",
+       subtitle = "with 95% confidence intervals",
+       x = "Days around surgery", y = "Resistivity Index",color = "CHD Diagnosis") +
+  geom_point(data = total_data, inherit.aes = FALSE,
+             aes(x= age_time_ultr, y = ri, color=Diagnosegroep),alpha = 0.7) +
+  labs(title = "Predicted values for Resistivity Indexby age, diagnosis and time",
+       x = "Days post-birth", y = "Resistivity Index")
 
 
 
