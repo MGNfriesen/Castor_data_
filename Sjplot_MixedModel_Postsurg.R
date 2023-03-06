@@ -29,11 +29,11 @@ total_data$Participant.Id<-total_data$`Participant Id`
 # Add flow measurements
 total_data <- total_data %>%
   mutate(
-    pi = ifelse(ultr_aca_angle == 1, ultr_aca_pi_no_ac_right_angle, ultr_aca_pi_with_ac),
+    pin = ifelse(ultr_aca_angle == 1, ultr_aca_pi_no_ac_right_angle, ultr_aca_pi_with_ac),
     ri = ifelse(ultr_aca_angle == 1, ultr_aca_ri_no_ac_right_angle, ultr_aca_ri_with_ac),
     ps = ifelse(ultr_aca_angle == 1, ultr_aca_ps_no_ac_right_angle, ultr_aca_ps_with_ac),
     md = ifelse(ultr_aca_angle == 1, ultr_aca_md_no_ac_right_angle, ultr_aca_md_with_ac),
-    pi = as.numeric(pi),
+    pin = as.numeric(pin),
     ri = as.numeric(ri),
     ps = as.numeric(ps),
     md = as.numeric(md)
@@ -107,12 +107,12 @@ plot_model(Arm_TD_md,
        x = "Days post-surgery", y = "Peak systolic velocity (cm/s)")
 
 ##Plot PI
-Arm_TD_pi <- lme(pi ~ tim_ultr * Diagnosegroep, data = total_data,  random = ~tim_ultr|Participant.Id, 
+Arm_TD_pin <- lme(pin ~ tim_ultr * Diagnosegroep, data = total_data,  random = ~tim_ultr|Participant.Id, 
                  correlation = corCAR1(value=0.9, form = ~tim_ultr|Participant.Id), method = "ML", 
                  na.action = na.exclude, control = list(opt="optim"))
 
 # Create the predicted values plot with confidence interval
-plot_model(Arm_TD_pi, 
+plot_model(Arm_TD_pin, 
            type = "pred", 
            terms = c("tim_ultr", "Diagnosegroep"), 
            show.se = TRUE,) +
@@ -120,7 +120,7 @@ plot_model(Arm_TD_pi,
        subtitle = "with 95% confidence intervals",
        x = "Days around surgery", y = "Peak systolic velocity (cm/s)",color = "CHD Diagnosis") +
   geom_point(data = total_data, inherit.aes = FALSE,
-             aes(x= tim_ultr, y = pi, color=Diagnosegroep),alpha = 0.7) +
+             aes(x= tim_ultr, y = pin, color=Diagnosegroep),alpha = 0.7) +
   labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
        x = "Days post-surgery", y = "Pulsatility Index")
 
