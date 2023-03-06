@@ -39,13 +39,6 @@ total_data <- total_data %>%
     md = as.numeric(md)
   )
 
-# Add brain injury information
-total_data <- total_data %>%
-  mutate(
-    bd_pre = ifelse(preop_mri_avail == 1, preop_bd_mri, preop_bd_echo),
-    bd_post = ifelse(postop_mri_available == 1, postop_bd_mri, NA),
-    bd_total = as.numeric(bd_pre == 1 | bd_post == 1)
-  )
 
 # Delete excluded patients
 excluded_ids <- c("110007", "110011", "110012", "110019")
@@ -79,7 +72,9 @@ tim_ultr<-total_data$tim_ultr
 
 #write out mixedmodel
 ##Plot PS
-Arm_TD_ps <- lme(ps ~ tim_ultr * Diagnosegroep, data = total_data, random = ~tim_ultr|Participant.Id, correlation = corCAR1(value=0.9, form = ~tim_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
+Arm_TD_ps <- lme(ps ~ tim_ultr * Diagnosegroep, data = total_data, random = ~tim_ultr|Participant.Id, 
+                 correlation = corCAR1(value=0.9, form = ~tim_ultr|Participant.Id), 
+                 method = "ML", na.action = na.exclude, control = list(opt="optim"))
 
 # Create the predicted values plot with confidence interval
 plot_model(Arm_TD_ps, 
@@ -112,7 +107,9 @@ plot_model(Arm_TD_md,
        x = "Days post-surgery", y = "Peak systolic velocity (cm/s)")
 
 ##Plot PI
-Arm_TD_pi <- lme(data = total_data, pi ~ tim_ultr * Diagnosegroep,  random = ~tim_ultr|Participant.Id, correlation = corCAR1(value=0.9, form = ~tim_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
+Arm_TD_pi <- lme(pi ~ tim_ultr * Diagnosegroep, data = total_data,  random = ~tim_ultr|Participant.Id, 
+                 correlation = corCAR1(value=0.9, form = ~tim_ultr|Participant.Id), method = "ML", 
+                 na.action = na.exclude, control = list(opt="optim"))
 
 # Create the predicted values plot with confidence interval
 plot_model(Arm_TD_pi, 

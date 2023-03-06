@@ -31,11 +31,11 @@ total_data$Participant.Id<-total_data$`Participant Id`
 # Add flow measurements
 total_data <- total_data %>%
   mutate(
-    pi = ifelse(ultr_aca_angle == 1, ultr_aca_pi_no_ac_right_angle, ultr_aca_pi_with_ac),
+    pin = ifelse(ultr_aca_angle == 1, ultr_aca_pi_no_ac_right_angle, ultr_aca_pi_with_ac),
     ri = ifelse(ultr_aca_angle == 1, ultr_aca_ri_no_ac_right_angle, ultr_aca_ri_with_ac),
     ps = ifelse(ultr_aca_angle == 1, ultr_aca_ps_no_ac_right_angle, ultr_aca_ps_with_ac),
     md = ifelse(ultr_aca_angle == 1, ultr_aca_md_no_ac_right_angle, ultr_aca_md_with_ac),
-    pi = as.numeric(pi),
+    pin = as.numeric(pin),
     ri = as.numeric(ri),
     ps = as.numeric(ps),
     md = as.numeric(md)
@@ -66,11 +66,6 @@ total_data <- total_data %>% filter(Diagnosegroep %in% c("TGA","LVOTO"))
 
 
 ####Plot mixed effects
-pi<-total_data$pi
-ri<-total_data$ri
-md<-total_data$md
-ps<-total_data$ps
-age_time_ultr<-total_data$age_time_ultr
 Participant.Id<-total_data$Participant.Id
 
 # Load the required packages
@@ -119,10 +114,10 @@ plot_model(Arm_TD_post_md,
 
 
 ##Plot PI
-Arm_TD_post_pi <- lme(pi ~ age_time_ultr * Diagnosegroep, data = total_data, random = ~age_time_ultr|Participant.Id, correlation = corCAR1(value=0.9, form = ~age_time_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
+Arm_TD_post_pin <- lme(pin ~ age_time_ultr * Diagnosegroep, data = total_data, random = ~age_time_ultr|Participant.Id, correlation = corCAR1(value=0.9, form = ~age_time_ultr|Participant.Id), method = "ML", na.action = na.exclude, control = list(opt="optim"))
 
 # Create the predicted values plot with confidence interval
-plot_model(Arm_TD_post_pi, 
+plot_model(Arm_TD_post_pin, 
            type = "pred", 
            terms = c("age_time_ultr", "Diagnosegroep"), 
            show.se = TRUE,) +
@@ -130,7 +125,7 @@ plot_model(Arm_TD_post_pi,
        subtitle = "with 95% confidence intervals",
        x = "Days around surgery", y = "Pulsatility Index",color = "CHD Diagnosis") +
   geom_point(data = total_data, inherit.aes = FALSE,
-             aes(x= age_time_ultr, y = pi, color=Diagnosegroep),alpha = 0.7) +
+             aes(x= age_time_ultr, y = pin, color=Diagnosegroep),alpha = 0.7) +
   labs(title = "Predicted values for peak diastolic velocity by age, diagnosis and time",
        x = "Days post-birth", y = "Pulsatility Index")
 
